@@ -1,11 +1,11 @@
 const defaults = {
   dimensionMode: "outer",
-  topArm: 80,
-  height: 60,
-  bottomArm: 80,
-  wall: 12,
-  depth: 30,
-  bevel: 3,
+  topArm: 21,
+  height: 18,
+  bottomArm: 31,
+  wall: 1,
+  depth: 40,
+  bevel: 0,
   quality: 2,
 };
 
