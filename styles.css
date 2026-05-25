@@ -26,6 +26,7 @@ body {
   min-height: 100vh;
   background: var(--bg);
   color: var(--text);
+  font-size: 15px;
 }
 
 button,
@@ -73,7 +74,7 @@ select {
 
 .brand h1 {
   margin: 0;
-  font-size: 20px;
+  font-size: 21px;
   line-height: 1;
   letter-spacing: 0;
 }
@@ -84,7 +85,7 @@ select {
   border: 1px solid var(--line);
   background: var(--panel);
   color: var(--text);
-  height: 38px;
+  height: 40px;
   border-radius: 7px;
   cursor: pointer;
 }
@@ -120,7 +121,7 @@ select {
   flex: 1;
   min-height: 0;
   display: grid;
-  grid-template-columns: 326px minmax(560px, 1fr) 340px;
+  grid-template-columns: 360px minmax(560px, 1fr) 360px;
   overflow: hidden;
   border-bottom: 1px solid var(--line);
 }
@@ -146,7 +147,7 @@ select {
 }
 
 .export-panel section {
-  padding: 12px 16px;
+  padding: 10px 16px;
 }
 
 .parameter-panel {
@@ -164,8 +165,8 @@ select {
 }
 
 h2 {
-  margin: 0 0 10px;
-  font-size: 15px;
+  margin: 0 0 8px;
+  font-size: 16px;
   line-height: 1.2;
   letter-spacing: 0;
 }
@@ -173,13 +174,13 @@ h2 {
 .status-pill {
   display: inline-flex;
   align-items: center;
-  height: 26px;
-  padding: 0 10px;
+  height: 28px;
+  padding: 0 11px;
   border-radius: 999px;
   border: 1px solid #9bd2aa;
   background: #effaf2;
   color: var(--ok);
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 700;
 }
 
@@ -187,8 +188,8 @@ h2 {
 .mode-toggle,
 .control {
   display: grid;
-  gap: 9px;
-  padding: 14px 0;
+  gap: 10px;
+  padding: 15px 0;
   border-bottom: 1px solid var(--line);
 }
 
@@ -198,7 +199,7 @@ h2 {
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 700;
 }
 
@@ -210,12 +211,12 @@ h2 {
 .unit-readout strong {
   display: inline-flex;
   align-items: center;
-  height: 30px;
-  padding: 0 10px;
+  height: 32px;
+  padding: 0 11px;
   border: 1px solid var(--line);
   border-radius: 7px;
   background: var(--panel-alt);
-  font-size: 13px;
+  font-size: 14px;
 }
 
 .mode-toggle {
@@ -229,7 +230,7 @@ h2 {
 .mode-toggle legend {
   grid-column: 1 / -1;
   padding: 0;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 700;
 }
 
@@ -238,12 +239,12 @@ h2 {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 38px;
+  min-height: 42px;
   border: 1px solid var(--line);
   border-radius: 7px;
   background: var(--panel);
   cursor: pointer;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 700;
 }
 
@@ -260,17 +261,17 @@ h2 {
 
 select,
 .number-field {
-  height: 38px;
+  height: 42px;
   border: 1px solid var(--line);
   border-radius: 7px;
   background: var(--panel);
   color: var(--text);
-  padding: 0 11px;
+  padding: 0 12px;
 }
 
 .range-row {
   display: grid;
-  grid-template-columns: 1fr 76px 28px;
+  grid-template-columns: 1fr 84px 32px;
   align-items: center;
   gap: 10px;
 }
@@ -281,29 +282,29 @@ input[type="range"] {
 }
 
 .number-field {
-  width: 76px;
+  width: 84px;
   text-align: right;
 }
 
 .unit-label,
 .range-limits {
   color: var(--muted);
-  font-size: 12px;
+  font-size: 13px;
 }
 
 .range-limits {
   display: flex;
   justify-content: space-between;
-  min-width: 54px;
+  min-width: 60px;
   color: var(--muted);
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 700;
 }
 
 .primary-button,
 .secondary-button,
 .reset-button {
-  min-height: 38px;
+  min-height: 42px;
   border: 1px solid var(--line);
   border-radius: 7px;
   cursor: pointer;
@@ -328,9 +329,9 @@ input[type="range"] {
 .primary-button.compact,
 .secondary-button.compact {
   width: auto;
-  min-width: 76px;
-  min-height: 38px;
-  padding: 0 14px;
+  min-width: 82px;
+  min-height: 40px;
+  padding: 0 15px;
   box-shadow: none;
 }
 
@@ -418,13 +419,13 @@ input[type="range"] {
   bottom: 14px;
   margin: 0;
   color: var(--muted);
-  font-size: 12px;
+  font-size: 13px;
 }
 
 .info-list {
   margin: 0;
   display: grid;
-  gap: 8px;
+  gap: 9px;
 }
 
 .info-list div {
@@ -436,12 +437,12 @@ input[type="range"] {
 
 .info-list dt {
   color: var(--muted);
-  font-size: 12px;
+  font-size: 13px;
 }
 
 .info-list dd {
   margin: 0;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 700;
   text-align: right;
 }
@@ -471,7 +472,7 @@ input[type="range"] {
 }
 
 .validation-card span {
-  font-size: 12px;
+  font-size: 13px;
   color: inherit;
 }
 
@@ -481,7 +482,7 @@ input[type="range"] {
 
 .drawing-grid {
   display: grid;
-  gap: 12px;
+  gap: 10px;
 }
 
 .drawing-grid figure {
@@ -492,21 +493,21 @@ input[type="range"] {
 
 .drawing-grid figcaption {
   color: var(--muted);
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 700;
 }
 
 .drawing-canvas {
   display: block;
   width: 100%;
-  height: 112px;
+  height: 108px;
   border: 1px solid var(--line);
   border-radius: 7px;
   background: #fff;
 }
 
 #frontViewCanvas {
-  height: 150px;
+  height: 144px;
 }
 
 .summary-panel,
