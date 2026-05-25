@@ -15,11 +15,17 @@
           </button>
           <h1>コ字ブラケット ジェネレーター</h1>
         </div>
-        <nav class="toolstrip" aria-label="表示ツール">
-          <button class="tool-button active" type="button" aria-pressed="true">モデル</button>
-          <button class="tool-button" type="button" id="toggleDims">寸法</button>
-          <button class="tool-button" type="button" id="resetView">リセット</button>
-        </nav>
+        <div class="header-actions">
+          <nav class="toolstrip" aria-label="表示ツール">
+            <button class="tool-button active" type="button" aria-pressed="true">モデル</button>
+            <button class="tool-button" type="button" id="toggleDims">寸法</button>
+            <button class="tool-button" type="button" id="resetView">リセット</button>
+          </nav>
+          <div class="header-export" aria-label="エクスポート">
+            <button id="downloadStl" class="primary-button compact" type="button">STL</button>
+            <button id="downloadJson" class="secondary-button compact" type="button">JSON</button>
+          </div>
+        </div>
       </header>
 
       <main class="workspace">
@@ -68,21 +74,30 @@
         </section>
 
         <aside class="panel export-panel" aria-label="モデル情報とエクスポート">
-          <section>
-            <h2>モデル情報</h2>
-            <dl class="info-list">
-              <div><dt>モデル名</dt><dd>コ字ブラケット</dd></div>
-              <div><dt>形式</dt><dd>ASCII STL</dd></div>
-              <div><dt>座標単位</dt><dd>mm</dd></div>
-            </dl>
+          <section class="drawing-panel">
+            <h2>三面図</h2>
+            <div class="drawing-grid" aria-label="正投影ビュー">
+              <figure>
+                <figcaption>正面</figcaption>
+                <canvas class="drawing-canvas" id="frontViewCanvas" width="420" height="280" aria-label="正面図"></canvas>
+              </figure>
+              <figure>
+                <figcaption>上面</figcaption>
+                <canvas class="drawing-canvas" id="topViewCanvas" width="420" height="220" aria-label="上面図"></canvas>
+              </figure>
+              <figure>
+                <figcaption>右側面</figcaption>
+                <canvas class="drawing-canvas" id="sideViewCanvas" width="420" height="220" aria-label="右側面図"></canvas>
+              </figure>
+            </div>
           </section>
 
-          <section>
+          <section class="summary-panel">
             <h2>寸法サマリー</h2>
             <dl id="summary" class="info-list compact"></dl>
           </section>
 
-          <section>
+          <section class="stats-panel">
             <h2>モデル統計</h2>
             <dl class="info-list compact">
               <div><dt>三角形数</dt><dd id="triCount">0</dd></div>
@@ -94,12 +109,6 @@
           <section class="validation-card" id="validationCard">
             <strong>検証完了</strong>
             <span id="validationText">3Dプリント可能な閉じた形状です。</span>
-          </section>
-
-          <section class="export-actions">
-            <h2>エクスポート</h2>
-            <button id="downloadStl" class="primary-button" type="button">STLをダウンロード</button>
-            <button id="downloadJson" class="secondary-button wide" type="button">設定JSONをダウンロード</button>
           </section>
         </aside>
       </main>

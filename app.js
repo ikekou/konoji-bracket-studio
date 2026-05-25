@@ -25,6 +25,11 @@ const view = { rotX: -0.36, rotY: 0.58, zoom: 0.86, showDims: true };
 const canvas = document.getElementById("previewCanvas");
 const ctx = canvas.getContext("2d");
 const controls = document.getElementById("controls");
+const drawingCanvases = {
+  front: document.getElementById("frontViewCanvas"),
+  top: document.getElementById("topViewCanvas"),
+  side: document.getElementById("sideViewCanvas"),
+};
 let mesh = null;
 let dragStart = null;
 
@@ -292,6 +297,7 @@ function updateModel() {
   mesh = buildUShapeMesh(state);
   updateStats(errors);
   draw();
+  drawOrthographicViews();
 }
 
 function updateStats(errors) {
@@ -331,7 +337,14 @@ function resizeCanvas() {
   canvas.width = Math.round(rect.width * dpr);
   canvas.height = Math.round(rect.height * dpr);
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  for (const item of Object.values(drawingCanvases)) {
+    const itemRect = item.getBoundingClientRect();
+    item.width = Math.round(itemRect.width * dpr);
+    item.height = Math.round(itemRect.height * dpr);
+    item.getContext("2d").setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
   draw();
+  drawOrthographicViews();
 }
 
 function rotatePoint([x, y, z]) {
@@ -488,6 +501,149 @@ function drawDimension(segment, width, height, frame) {
   ctx.fillStyle = color;
   ctx.fillText(label, labelX, labelY);
   ctx.restore();
+}
+
+function drawOrthographicViews() {
+  drawFrontView(drawingCanvases.front);
+  drawTopView(drawingCanvases.top);
+  drawSideView(drawingCanvases.side);
+}
+
+function getCanvasSize(target) {
+  return {
+    width: target.clientWidth,
+    height: target.clientHeight,
+  };
+}
+
+function prepareDrawingCanvas(target) {
+  const drawingCtx = target.getContext("2d");
+  const { width, height } = getCanvasSize(target);
+  drawingCtx.clearRect(0, 0, width, height);
+  drawingCtx.fillStyle = "#ffffff";
+  drawingCtx.fillRect(0, 0, width, height);
+  drawingCtx.strokeStyle = "rgba(27, 34, 41, 0.06)";
+  drawingCtx.lineWidth = 1;
+  for (let x = 16; x < width; x += 16) {
+    drawingCtx.beginPath();
+    drawingCtx.moveTo(x, 0);
+    drawingCtx.lineTo(x, height);
+    drawingCtx.stroke();
+  }
+  for (let y = 16; y < height; y += 16) {
+    drawingCtx.beginPath();
+    drawingCtx.moveTo(0, y);
+    drawingCtx.lineTo(width, y);
+    drawingCtx.stroke();
+  }
+  return { drawingCtx, width, height };
+}
+
+function createPlanMapper(width, height, modelWidth, modelHeight, margin = 30) {
+  const scale = Math.min((width - margin * 2) / Math.max(1, modelWidth), (height - margin * 2) / Math.max(1, modelHeight));
+  const x0 = (width - modelWidth * scale) / 2;
+  const y0 = (height + modelHeight * scale) / 2;
+  return {
+    scale,
+    point: (x, y) => ({ x: x0 + x * scale, y: y0 - y * scale }),
+  };
+}
+
+function drawPlanPolygon(drawingCtx, mapper, points, fill = "#f2eee6") {
+  drawingCtx.beginPath();
+  points.forEach(([x, y], index) => {
+    const p = mapper.point(x, y);
+    if (index === 0) drawingCtx.moveTo(p.x, p.y);
+    else drawingCtx.lineTo(p.x, p.y);
+  });
+  drawingCtx.closePath();
+  drawingCtx.fillStyle = fill;
+  drawingCtx.strokeStyle = "#2d333a";
+  drawingCtx.lineWidth = 1.5;
+  drawingCtx.fill();
+  drawingCtx.stroke();
+}
+
+function drawPlanDimension(drawingCtx, mapper, a, b, label, offsetX = 0, offsetY = 0) {
+  const pa = mapper.point(a[0], a[1]);
+  const pb = mapper.point(b[0], b[1]);
+  const ax = pa.x + offsetX;
+  const ay = pa.y + offsetY;
+  const bx = pb.x + offsetX;
+  const by = pb.y + offsetY;
+  drawingCtx.save();
+  drawingCtx.strokeStyle = "#1d4ed8";
+  drawingCtx.fillStyle = "#1d4ed8";
+  drawingCtx.lineWidth = 1;
+  drawingCtx.beginPath();
+  drawingCtx.moveTo(ax, ay);
+  drawingCtx.lineTo(bx, by);
+  drawingCtx.stroke();
+  drawingCtx.beginPath();
+  drawingCtx.moveTo(pa.x, pa.y);
+  drawingCtx.lineTo(ax, ay);
+  drawingCtx.moveTo(pb.x, pb.y);
+  drawingCtx.lineTo(bx, by);
+  drawingCtx.stroke();
+  drawingCtx.font = "12px Inter, system-ui, sans-serif";
+  drawingCtx.textAlign = "center";
+  drawingCtx.textBaseline = "middle";
+  const labelX = (ax + bx) / 2;
+  const labelY = (ay + by) / 2;
+  const metrics = drawingCtx.measureText(label);
+  drawingCtx.fillStyle = "rgba(255, 255, 255, 0.92)";
+  drawingCtx.fillRect(labelX - metrics.width / 2 - 4, labelY - 8, metrics.width + 8, 16);
+  drawingCtx.fillStyle = "#1d4ed8";
+  drawingCtx.fillText(label, labelX, labelY);
+  drawingCtx.restore();
+}
+
+function drawHiddenLine(drawingCtx, mapper, a, b) {
+  const pa = mapper.point(a[0], a[1]);
+  const pb = mapper.point(b[0], b[1]);
+  drawingCtx.save();
+  drawingCtx.setLineDash([4, 4]);
+  drawingCtx.strokeStyle = "#8b96a3";
+  drawingCtx.lineWidth = 1;
+  drawingCtx.beginPath();
+  drawingCtx.moveTo(pa.x, pa.y);
+  drawingCtx.lineTo(pb.x, pb.y);
+  drawingCtx.stroke();
+  drawingCtx.restore();
+}
+
+function drawFrontView(target) {
+  const { drawingCtx, width, height } = prepareDrawingCanvas(target);
+  const modelWidth = Math.max(state.topArm, state.bottomArm, state.wall);
+  const outline = getOpenFrameOutline(state.topArm, state.height, state.bottomArm, state.wall);
+  const mapper = createPlanMapper(width, height, modelWidth, state.height, 32);
+  drawPlanPolygon(drawingCtx, mapper, outline);
+  drawPlanDimension(drawingCtx, mapper, [0, state.height], [modelWidth, state.height], `${modelWidth.toFixed(1)}`, 0, -18);
+  drawPlanDimension(drawingCtx, mapper, [modelWidth, 0], [modelWidth, state.height], `${state.height.toFixed(1)}`, 20, 0);
+  drawPlanDimension(drawingCtx, mapper, [modelWidth - state.wall, state.wall], [modelWidth, state.wall], `T ${state.wall.toFixed(1)}`, 0, 16);
+}
+
+function drawTopView(target) {
+  const { drawingCtx, width, height } = prepareDrawingCanvas(target);
+  const modelWidth = Math.max(state.topArm, state.bottomArm, state.wall);
+  const mapper = createPlanMapper(width, height, modelWidth, state.depth, 32);
+  drawPlanPolygon(drawingCtx, mapper, [[0, 0], [modelWidth, 0], [modelWidth, state.depth], [0, state.depth]], "#eef3f8");
+  const topLeft = modelWidth - state.topArm;
+  const bottomLeft = modelWidth - state.bottomArm;
+  drawHiddenLine(drawingCtx, mapper, [topLeft, 0], [topLeft, state.depth]);
+  drawHiddenLine(drawingCtx, mapper, [bottomLeft, 0], [bottomLeft, state.depth]);
+  drawPlanDimension(drawingCtx, mapper, [0, state.depth], [modelWidth, state.depth], `${modelWidth.toFixed(1)}`, 0, -16);
+  drawPlanDimension(drawingCtx, mapper, [modelWidth, 0], [modelWidth, state.depth], `D ${state.depth.toFixed(1)}`, 18, 0);
+}
+
+function drawSideView(target) {
+  const { drawingCtx, width, height } = prepareDrawingCanvas(target);
+  const mapper = createPlanMapper(width, height, state.depth, state.height, 32);
+  drawPlanPolygon(drawingCtx, mapper, [[0, 0], [state.depth, 0], [state.depth, state.height], [0, state.height]], "#f3f0e8");
+  drawHiddenLine(drawingCtx, mapper, [0, state.wall], [state.depth, state.wall]);
+  drawHiddenLine(drawingCtx, mapper, [0, state.height - state.wall], [state.depth, state.height - state.wall]);
+  drawPlanDimension(drawingCtx, mapper, [0, state.height], [state.depth, state.height], `D ${state.depth.toFixed(1)}`, 0, -16);
+  drawPlanDimension(drawingCtx, mapper, [state.depth, 0], [state.depth, state.height], `${state.height.toFixed(1)}`, 18, 0);
 }
 
 function triangleNormal(tri) {
