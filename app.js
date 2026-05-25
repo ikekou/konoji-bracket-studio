@@ -351,10 +351,14 @@ function getDimensionSegments() {
   const w = modelWidth / 2;
   const h = state.height / 2;
   const d = state.depth / 2;
+  const topStart = w - state.topArm;
+  const bottomStart = w - state.bottomArm;
   return [
-    { a: [-w, h + 8, d], b: [w, h + 8, d], label: `${modelWidth.toFixed(1)}` },
-    { a: [w + 8, -h, d], b: [w + 8, h, d], label: `${state.height.toFixed(1)}` },
-    { a: [w + 6, -h - 8, -d], b: [w + 6, -h - 8, d], label: `${state.depth.toFixed(1)}` },
+    { a: [-w, h + 10, d], b: [w, h + 10, d], label: `外幅 ${modelWidth.toFixed(1)}` },
+    { a: [topStart, h + 3, d + 2], b: [w, h + 3, d + 2], label: `上辺 ${state.topArm.toFixed(1)}`, color: "#1d4ed8" },
+    { a: [bottomStart, -h - 5, d + 2], b: [w, -h - 5, d + 2], label: `下辺 ${state.bottomArm.toFixed(1)}`, color: "#1d4ed8", labelOffset: 12 },
+    { a: [w + 8, -h, d], b: [w + 8, h, d], label: `高さ ${state.height.toFixed(1)}` },
+    { a: [w + 6, -h - 10, -d], b: [w + 6, -h - 10, d], label: `奥行 ${state.depth.toFixed(1)}` },
   ];
 }
 
@@ -456,17 +460,18 @@ function drawGrid(width, height) {
 }
 
 function drawDimensions(width, height, frame) {
-  getDimensionSegments().forEach(({ a, b, label }) => {
-    drawDimension(a, b, label, width, height, frame);
+  getDimensionSegments().forEach((segment) => {
+    drawDimension(segment, width, height, frame);
   });
 }
 
-function drawDimension(a, b, label, width, height, frame) {
+function drawDimension(segment, width, height, frame) {
+  const { a, b, label, color = "#111827", labelOffset = -10 } = segment;
   const pa = project(a, width, height, frame);
   const pb = project(b, width, height, frame);
   ctx.save();
-  ctx.strokeStyle = "#111827";
-  ctx.fillStyle = "#111827";
+  ctx.strokeStyle = color;
+  ctx.fillStyle = color;
   ctx.lineWidth = 1.5;
   ctx.beginPath();
   ctx.moveTo(pa.x, pa.y);
@@ -476,11 +481,11 @@ function drawDimension(a, b, label, width, height, frame) {
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   const labelX = (pa.x + pb.x) / 2;
-  const labelY = (pa.y + pb.y) / 2 - 10;
+  const labelY = (pa.y + pb.y) / 2 + labelOffset;
   const metrics = ctx.measureText(label);
   ctx.fillStyle = "rgba(247, 249, 251, 0.88)";
   ctx.fillRect(labelX - metrics.width / 2 - 5, labelY - 9, metrics.width + 10, 18);
-  ctx.fillStyle = "#111827";
+  ctx.fillStyle = color;
   ctx.fillText(label, labelX, labelY);
   ctx.restore();
 }
