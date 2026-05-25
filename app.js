@@ -19,12 +19,6 @@ const controlDefs = [
   { key: "quality", label: "曲面品質", min: 1, max: 4, step: 1 },
 ];
 
-const presets = {
-  small: { topArm: 50, height: 42, bottomArm: 50, wall: 8, depth: 20, bevel: 2, quality: 2 },
-  standard: defaults,
-  wide: { topArm: 120, height: 72, bottomArm: 120, wall: 14, depth: 36, bevel: 4, quality: 3 },
-};
-
 const state = { ...defaults };
 const view = { rotX: -0.45, rotY: 0.72, zoom: 0.92, showDims: true };
 
@@ -575,14 +569,6 @@ document.getElementById("zoomIn").addEventListener("click", () => {
 document.getElementById("zoomOut").addEventListener("click", () => {
   view.zoom = clamp(view.zoom - 0.12, 0.35, 1.8);
   draw();
-});
-
-document.querySelectorAll("[data-preset]").forEach((button) => {
-  button.addEventListener("click", () => {
-    Object.assign(state, presets[button.dataset.preset]);
-    syncControlValues();
-    updateModel();
-  });
 });
 
 window.addEventListener("resize", resizeCanvas);

@@ -278,13 +278,6 @@ input[type="range"] {
   font-weight: 700;
 }
 
-.preset-row {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
-  margin: 18px 0 10px;
-}
-
 .primary-button,
 .secondary-button,
 .reset-button {
