@@ -23,7 +23,6 @@ const state = { ...defaults };
 const view = { rotX: -0.36, rotY: 0.58, zoom: 0.86, showDims: true };
 
 const canvas = document.getElementById("previewCanvas");
-const ctx = canvas.getContext("2d");
 const controls = document.getElementById("controls");
 const drawingCanvases = {
   front: document.getElementById("frontViewCanvas"),
@@ -32,6 +31,20 @@ const drawingCanvases = {
 };
 let mesh = null;
 let dragStart = null;
+let preview3d = null;
+let fallbackCtx = null;
+let allowFallbackPreview = !window.KONOJI_EXPECTS_WEBGL;
+
+function getFallbackContext() {
+  if (!fallbackCtx) fallbackCtx = canvas.getContext("2d");
+  return fallbackCtx;
+}
+
+function initPreview3d() {
+  if (preview3d || fallbackCtx || !window.KonojiPreview3D) return;
+  preview3d = window.KonojiPreview3D.createPreview(canvas);
+  draw();
+}
 
 function buildControls() {
   controls.innerHTML = "";
@@ -332,11 +345,15 @@ function updateStats(errors) {
 }
 
 function resizeCanvas() {
-  const rect = canvas.getBoundingClientRect();
   const dpr = window.devicePixelRatio || 1;
-  canvas.width = Math.round(rect.width * dpr);
-  canvas.height = Math.round(rect.height * dpr);
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  if (!preview3d && allowFallbackPreview) {
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = Math.round(rect.width * dpr);
+    canvas.height = Math.round(rect.height * dpr);
+    getFallbackContext().setTransform(dpr, 0, 0, dpr, 0, 0);
+  } else if (preview3d) {
+    preview3d.resize();
+  }
   for (const item of Object.values(drawingCanvases)) {
     const itemRect = item.getBoundingClientRect();
     item.width = Math.round(itemRect.width * dpr);
@@ -410,10 +427,20 @@ function project(point, width, height, frame) {
 
 function draw() {
   if (!mesh) return;
+  if (preview3d) {
+    preview3d.update(mesh, view, getDimensionSegments());
+    return;
+  }
+  if (!allowFallbackPreview) return;
+  drawFallbackPreview();
+}
+
+function drawFallbackPreview() {
+  const ctx = getFallbackContext();
   const width = canvas.clientWidth;
   const height = canvas.clientHeight;
   ctx.clearRect(0, 0, width, height);
-  drawGrid(width, height);
+  drawGrid(ctx, width, height);
   const frame = getSceneFrame(width, height);
 
   const sorted = mesh.faces
@@ -438,7 +465,7 @@ function draw() {
     ctx.stroke();
   }
 
-  if (view.showDims) drawDimensions(width, height, frame);
+  if (view.showDims) drawDimensions(ctx, width, height, frame);
 }
 
 function faceShade(tri) {
@@ -453,7 +480,7 @@ function faceShade(tri) {
   return clamp(74 + light * 16, 54, 92);
 }
 
-function drawGrid(width, height) {
+function drawGrid(ctx, width, height) {
   ctx.save();
   ctx.strokeStyle = "rgba(55, 65, 81, 0.06)";
   ctx.lineWidth = 1;
@@ -472,13 +499,13 @@ function drawGrid(width, height) {
   ctx.restore();
 }
 
-function drawDimensions(width, height, frame) {
+function drawDimensions(ctx, width, height, frame) {
   getDimensionSegments().forEach((segment) => {
-    drawDimension(segment, width, height, frame);
+    drawDimension(ctx, segment, width, height, frame);
   });
 }
 
-function drawDimension(segment, width, height, frame) {
+function drawDimension(ctx, segment, width, height, frame) {
   const { a, b, label, color = "#111827", labelOffset = -10 } = segment;
   const pa = project(a, width, height, frame);
   const pb = project(b, width, height, frame);
@@ -783,8 +810,20 @@ document.getElementById("zoomOut").addEventListener("click", () => {
 });
 
 window.addEventListener("resize", resizeCanvas);
+window.addEventListener("konoji-preview-ready", () => {
+  initPreview3d();
+  resizeCanvas();
+});
+if (!allowFallbackPreview) {
+  window.setTimeout(() => {
+    if (preview3d || window.KonojiPreview3D) return;
+    allowFallbackPreview = true;
+    resizeCanvas();
+  }, 8000);
+}
 
 buildControls();
+initPreview3d();
 updateModel();
 resizeCanvas();
 
