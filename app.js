@@ -20,7 +20,7 @@ const controlDefs = [
 ];
 
 const state = { ...defaults };
-const view = { rotX: -0.45, rotY: 0.72, zoom: 0.92, showDims: true };
+const view = { rotX: -0.36, rotY: 0.58, zoom: 0.86, showDims: true };
 
 const canvas = document.getElementById("previewCanvas");
 const ctx = canvas.getContext("2d");
@@ -158,11 +158,12 @@ function buildUShapeMesh(params) {
   const d = params.depth;
   const r = Math.min(params.bevel, t * 0.35, w * 0.08, h * 0.08);
   const triangles = [];
+  const faces = [];
   const outlinePoints = getOpenFrameOutline(params.topArm, h, params.bottomArm, t);
   const outline = roundedCornerPolygon(outlinePoints, r, params.quality).map(([x, y]) => [x - w / 2, y - h / 2]);
-  addExtrudedPolygon(triangles, outline, -d / 2, d / 2);
+  addExtrudedPolygon(triangles, faces, outline, -d / 2, d / 2);
   const area = params.topArm * t + params.bottomArm * t + h * t - t * t * 2;
-  return { triangles, volumeMm3: area * d };
+  return { triangles, faces, volumeMm3: area * d };
 }
 
 function toPrintOrientation(vertex) {
@@ -214,12 +215,14 @@ function roundedCornerPolygon(points, radius, quality) {
   return output;
 }
 
-function addExtrudedPolygon(tris, points, z0, z1) {
+function addExtrudedPolygon(tris, faces, points, z0, z1) {
   const indices = triangulate(points);
   for (const [a, b, c] of indices) {
     tris.push([[points[a][0], points[a][1], z1], [points[b][0], points[b][1], z1], [points[c][0], points[c][1], z1]]);
     tris.push([[points[c][0], points[c][1], z0], [points[b][0], points[b][1], z0], [points[a][0], points[a][1], z0]]);
   }
+  faces.push(points.map(([x, y]) => [x, y, z1]));
+  faces.push([...points].reverse().map(([x, y]) => [x, y, z0]));
   for (let i = 0; i < points.length; i += 1) {
     const n = (i + 1) % points.length;
     const a = [points[i][0], points[i][1], z0];
@@ -228,6 +231,7 @@ function addExtrudedPolygon(tris, points, z0, z1) {
     const d = [points[i][0], points[i][1], z1];
     tris.push([a, b, c]);
     tris.push([a, c, d]);
+    faces.push([a, b, c, d]);
   }
 }
 
@@ -342,11 +346,49 @@ function rotatePoint([x, y, z]) {
   return [x1, y1, z2];
 }
 
-function project(point, width, height) {
-  const [x, y, z] = rotatePoint(point);
+function getDimensionSegments() {
   const modelWidth = Math.max(state.topArm, state.bottomArm, state.wall);
-  const scale = (Math.min(width, height) / Math.max(modelWidth, state.height, state.depth)) * view.zoom;
-  return { x: width / 2 + x * scale, y: height / 2 - y * scale, z };
+  const w = modelWidth / 2;
+  const h = state.height / 2;
+  const d = state.depth / 2;
+  return [
+    { a: [-w, h + 8, d], b: [w, h + 8, d], label: `${modelWidth.toFixed(1)}` },
+    { a: [w + 8, -h, d], b: [w + 8, h, d], label: `${state.height.toFixed(1)}` },
+    { a: [w + 6, -h - 8, -d], b: [w + 6, -h - 8, d], label: `${state.depth.toFixed(1)}` },
+  ];
+}
+
+function getSceneFrame(width, height) {
+  const points = mesh.faces.flat();
+  if (view.showDims) {
+    getDimensionSegments().forEach(({ a, b }) => points.push(a, b));
+  }
+  const projected = points.map(rotatePoint);
+  const xs = projected.map(([x]) => x);
+  const ys = projected.map(([, y]) => y);
+  const minX = Math.min(...xs);
+  const maxX = Math.max(...xs);
+  const minY = Math.min(...ys);
+  const maxY = Math.max(...ys);
+  const padding = Math.min(width, height) * 0.12;
+  const fitScale = Math.min(
+    (width - padding * 2) / Math.max(1, maxX - minX),
+    (height - padding * 2) / Math.max(1, maxY - minY),
+  );
+  return {
+    centerX: (minX + maxX) / 2,
+    centerY: (minY + maxY) / 2,
+    scale: fitScale * view.zoom,
+  };
+}
+
+function project(point, width, height, frame) {
+  const [x, y, z] = rotatePoint(point);
+  return {
+    x: width / 2 + (x - frame.centerX) * frame.scale,
+    y: height / 2 - (y - frame.centerY) * frame.scale,
+    z,
+  };
 }
 
 function draw() {
@@ -355,29 +397,31 @@ function draw() {
   const height = canvas.clientHeight;
   ctx.clearRect(0, 0, width, height);
   drawGrid(width, height);
+  const frame = getSceneFrame(width, height);
 
-  const sorted = mesh.triangles
-    .map((tri) => {
-      const pts = tri.map((p) => project(p, width, height));
-      const depth = pts.reduce((sum, p) => sum + p.z, 0) / 3;
-      return { pts, depth, shade: faceShade(tri) };
+  const sorted = mesh.faces
+    .map((face) => {
+      const pts = face.map((p) => project(p, width, height, frame));
+      const depth = pts.reduce((sum, p) => sum + p.z, 0) / pts.length;
+      return { pts, depth, shade: faceShade(face) };
     })
     .sort((a, b) => a.depth - b.depth);
 
   for (const item of sorted) {
     ctx.beginPath();
     ctx.moveTo(item.pts[0].x, item.pts[0].y);
-    ctx.lineTo(item.pts[1].x, item.pts[1].y);
-    ctx.lineTo(item.pts[2].x, item.pts[2].y);
+    for (let i = 1; i < item.pts.length; i += 1) {
+      ctx.lineTo(item.pts[i].x, item.pts[i].y);
+    }
     ctx.closePath();
-    ctx.fillStyle = `hsl(42 12% ${item.shade}%)`;
-    ctx.strokeStyle = "rgba(70, 75, 80, 0.07)";
-    ctx.lineWidth = 0.6;
+    ctx.fillStyle = `hsl(42 13% ${item.shade}%)`;
+    ctx.strokeStyle = "rgba(70, 75, 80, 0.14)";
+    ctx.lineWidth = 1;
     ctx.fill();
     ctx.stroke();
   }
 
-  if (view.showDims) drawDimensions(width, height);
+  if (view.showDims) drawDimensions(width, height, frame);
 }
 
 function faceShade(tri) {
@@ -411,19 +455,15 @@ function drawGrid(width, height) {
   ctx.restore();
 }
 
-function drawDimensions(width, height) {
-  const modelWidth = Math.max(state.topArm, state.bottomArm, state.wall);
-  const w = modelWidth / 2;
-  const h = state.height / 2;
-  const d = state.depth / 2;
-  drawDimension([-w, h + 8, d], [w, h + 8, d], `${modelWidth.toFixed(1)}`, width, height);
-  drawDimension([w + 8, -h, d], [w + 8, h, d], `${state.height.toFixed(1)}`, width, height);
-  drawDimension([w + 6, -h - 8, -d], [w + 6, -h - 8, d], `${state.depth.toFixed(1)}`, width, height);
+function drawDimensions(width, height, frame) {
+  getDimensionSegments().forEach(({ a, b, label }) => {
+    drawDimension(a, b, label, width, height, frame);
+  });
 }
 
-function drawDimension(a, b, label, width, height) {
-  const pa = project(a, width, height);
-  const pb = project(b, width, height);
+function drawDimension(a, b, label, width, height, frame) {
+  const pa = project(a, width, height, frame);
+  const pb = project(b, width, height, frame);
   ctx.save();
   ctx.strokeStyle = "#111827";
   ctx.fillStyle = "#111827";
@@ -435,7 +475,13 @@ function drawDimension(a, b, label, width, height) {
   ctx.font = "14px Inter, system-ui, sans-serif";
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
-  ctx.fillText(label, (pa.x + pb.x) / 2, (pa.y + pb.y) / 2 - 10);
+  const labelX = (pa.x + pb.x) / 2;
+  const labelY = (pa.y + pb.y) / 2 - 10;
+  const metrics = ctx.measureText(label);
+  ctx.fillStyle = "rgba(247, 249, 251, 0.88)";
+  ctx.fillRect(labelX - metrics.width / 2 - 5, labelY - 9, metrics.width + 10, 18);
+  ctx.fillStyle = "#111827";
+  ctx.fillText(label, labelX, labelY);
   ctx.restore();
 }
 
@@ -546,7 +592,7 @@ document.querySelectorAll('input[name="dimensionMode"]').forEach((input) => {
 });
 
 document.getElementById("resetView").addEventListener("click", () => {
-  Object.assign(view, { rotX: -0.45, rotY: 0.72, zoom: 0.92, showDims: view.showDims });
+  Object.assign(view, { rotX: -0.36, rotY: 0.58, zoom: 0.86, showDims: view.showDims });
   draw();
 });
 
