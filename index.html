@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>コ字ブラケット ジェネレーター</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <div class="brand">
+          <button class="icon-button" aria-label="メニュー">
+            <span></span><span></span><span></span>
+          </button>
+          <h1>コ字ブラケット ジェネレーター</h1>
+        </div>
+        <nav class="toolstrip" aria-label="表示ツール">
+          <button class="tool-button active" type="button" aria-pressed="true">モデル</button>
+          <button class="tool-button" type="button" id="toggleDims">寸法</button>
+          <button class="tool-button" type="button" id="resetView">リセット</button>
+        </nav>
+      </header>
+
+      <main class="workspace">
+        <aside class="panel parameter-panel" aria-label="パラメーター">
+          <div class="panel-heading">
+            <h2>パラメーター</h2>
+            <span id="validityBadge" class="status-pill">検証完了</span>
+          </div>
+
+          <div class="unit-readout">
+            <span>単位</span>
+            <strong>mm</strong>
+          </div>
+
+          <fieldset class="mode-toggle">
+            <legend>寸法指定</legend>
+            <label>
+              <input type="radio" name="dimensionMode" value="outer" checked />
+              <span>外寸</span>
+            </label>
+            <label>
+              <input type="radio" name="dimensionMode" value="inner" />
+              <span>内寸</span>
+            </label>
+          </fieldset>
+
+          <div id="controls" class="controls"></div>
+
+          <div class="preset-row">
+            <button class="secondary-button" type="button" data-preset="small">小型</button>
+            <button class="secondary-button" type="button" data-preset="standard">標準</button>
+            <button class="secondary-button" type="button" data-preset="wide">幅広</button>
+          </div>
+
+          <button id="resetParams" class="reset-button" type="button">パラメーターをリセット</button>
+        </aside>
+
+        <section class="viewport-wrap" aria-label="3Dプレビュー">
+          <div class="viewport-toolbar">
+            <button class="viewport-tool active" type="button">選択</button>
+            <button class="viewport-tool" type="button" id="rotateLeft">回転</button>
+            <button class="viewport-tool" type="button" id="zoomIn">拡大</button>
+            <button class="viewport-tool" type="button" id="zoomOut">縮小</button>
+          </div>
+          <canvas id="previewCanvas" width="1200" height="820" aria-label="コ字ブラケットの3Dプレビュー"></canvas>
+          <div class="axis-widget" aria-hidden="true">
+            <span class="axis x">X</span>
+            <span class="axis y">Y</span>
+            <span class="axis z">Z</span>
+          </div>
+          <p class="viewport-caption">ドラッグで回転、ホイールでズーム</p>
+        </section>
+
+        <aside class="panel export-panel" aria-label="モデル情報とエクスポート">
+          <section>
+            <h2>モデル情報</h2>
+            <dl class="info-list">
+              <div><dt>モデル名</dt><dd>コ字ブラケット</dd></div>
+              <div><dt>形式</dt><dd>ASCII STL</dd></div>
+              <div><dt>座標単位</dt><dd>mm</dd></div>
+            </dl>
+          </section>
+
+          <section>
+            <h2>寸法サマリー</h2>
+            <dl id="summary" class="info-list compact"></dl>
+          </section>
+
+          <section>
+            <h2>モデル統計</h2>
+            <dl class="info-list compact">
+              <div><dt>三角形数</dt><dd id="triCount">0</dd></div>
+              <div><dt>体積</dt><dd id="volume">0 cm³</dd></div>
+              <div><dt>推定重量 (PLA)</dt><dd id="weight">0 g</dd></div>
+            </dl>
+          </section>
+
+          <section class="validation-card" id="validationCard">
+            <strong>検証完了</strong>
+            <span id="validationText">3Dプリント可能な閉じた形状です。</span>
+          </section>
+
+          <section class="export-actions">
+            <h2>エクスポート</h2>
+            <button id="downloadStl" class="primary-button" type="button">STLをダウンロード</button>
+            <button id="downloadJson" class="secondary-button wide" type="button">設定JSONをダウンロード</button>
+          </section>
+        </aside>
+      </main>
+    </div>
+
+    <script src="./app.js"></script>
+  </body>
+</html>
