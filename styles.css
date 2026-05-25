@@ -120,7 +120,7 @@ select {
   flex: 1;
   min-height: 0;
   display: grid;
-  grid-template-columns: 326px minmax(420px, 1fr) 290px;
+  grid-template-columns: 326px minmax(560px, 1fr) 340px;
   overflow: hidden;
   border-bottom: 1px solid var(--line);
 }
@@ -481,18 +481,13 @@ input[type="range"] {
 
 .drawing-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
+  gap: 12px;
 }
 
 .drawing-grid figure {
   margin: 0;
   display: grid;
   gap: 6px;
-}
-
-.drawing-grid figure:first-child {
-  grid-column: 1 / -1;
 }
 
 .drawing-grid figcaption {
@@ -504,14 +499,14 @@ input[type="range"] {
 .drawing-canvas {
   display: block;
   width: 100%;
-  height: 96px;
+  height: 112px;
   border: 1px solid var(--line);
   border-radius: 7px;
   background: #fff;
 }
 
 #frontViewCanvas {
-  height: 124px;
+  height: 150px;
 }
 
 .summary-panel,
