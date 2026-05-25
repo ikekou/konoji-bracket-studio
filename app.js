@@ -616,9 +616,13 @@ function drawFrontView(target) {
   const { drawingCtx, width, height } = prepareDrawingCanvas(target);
   const modelWidth = Math.max(state.topArm, state.bottomArm, state.wall);
   const outline = getOpenFrameOutline(state.topArm, state.height, state.bottomArm, state.wall);
-  const mapper = createPlanMapper(width, height, modelWidth, state.height, 32);
+  const mapper = createPlanMapper(width, height, modelWidth, state.height, 40);
+  const topLeft = modelWidth - state.topArm;
+  const bottomLeft = modelWidth - state.bottomArm;
   drawPlanPolygon(drawingCtx, mapper, outline);
-  drawPlanDimension(drawingCtx, mapper, [0, state.height], [modelWidth, state.height], `${modelWidth.toFixed(1)}`, 0, -18);
+  drawPlanDimension(drawingCtx, mapper, [0, state.height], [modelWidth, state.height], `外幅 ${modelWidth.toFixed(1)}`, 0, -24);
+  drawPlanDimension(drawingCtx, mapper, [topLeft, state.height], [modelWidth, state.height], `上辺 ${state.topArm.toFixed(1)}`, 0, 18);
+  drawPlanDimension(drawingCtx, mapper, [bottomLeft, 0], [modelWidth, 0], `下辺 ${state.bottomArm.toFixed(1)}`, 0, 20);
   drawPlanDimension(drawingCtx, mapper, [modelWidth, 0], [modelWidth, state.height], `${state.height.toFixed(1)}`, 20, 0);
   drawPlanDimension(drawingCtx, mapper, [modelWidth - state.wall, state.wall], [modelWidth, state.wall], `T ${state.wall.toFixed(1)}`, 0, 16);
 }
